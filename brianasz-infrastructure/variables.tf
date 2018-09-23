@@ -14,6 +14,12 @@ variable "droplet_size" {}
 variable "domain_name" {}
 
 # Domain records
-variable "record_type" {}
-variable "record_name" {}
-variable "record_value" {}
+variable "record_www_type" {}
+variable "record_www_name" {}
+variable "record_www_value" {}
+
+# Domain records
+variable "record_myblog_type" {}
+variable "record_myblog_name" {}
+variable "record_myblog_value" {}
+

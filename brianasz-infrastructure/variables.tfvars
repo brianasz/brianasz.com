@@ -9,7 +9,13 @@ domain          = "brianasz"
 domain_name     = "brianasz.com"
 
 # Domain records
-record       = "CNAME-www"
-record_type  = "CNAME"
-record_name  = "www"
-record_value = "@"
+record_www       = "CNAME-www"
+record_www_type  = "CNAME"
+record_www_name  = "www"
+record_www_value = "@"
+
+# Domain records
+record_myblog       = "CNAME-myblog"
+record_myblog_type  = "CNAME"
+record_myblog_name  = "myblog"
+record_myblog_value = "@"

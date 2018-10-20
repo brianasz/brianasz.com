@@ -1,0 +1,10 @@
+- hosts: brianasz_com
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - httpd
+    - mysql
+  #  - server
+  #  - php
+  #  - wordpress

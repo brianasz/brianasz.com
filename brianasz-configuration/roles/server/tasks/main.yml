@@ -1,0 +1,131 @@
+---
+# tasks file for server
+#####################################################
+# Change root password
+- name: Change root password
+  user: 
+    name: root 
+    password: "{{ ROOT_PASSWORD }}"
+
+# Yum update
+- name: Update the system
+  yum:
+    name: '*'
+    state: latest
+     
+# Set up hostname
+- hostname:
+    name: "{{ HOSTNAME }}"
+
+# Set up timezone
+- name: Set timezone
+  timezone: 
+    name: "{{ TIMEZONE }}"
+
+# Create new user
+- name: Add new user
+  user: 
+    name: "{{ NEW_USER }}"
+    groups: "{{ NEW_USER_GROUPS }}"
+    password: "{{ NEW_USER_PASSWORD }}" 
+    shell: /bin/bash
+
+# Add new user ssh keys to server
+- name: Add authorized keys for new user
+  authorized_key: 
+    user: "{{ NEW_USER }}"
+    key: "{{ lookup('file', item) }}"
+  with_items: 
+    - "{{ NEW_USER_SSH_KEY_FILE }}"
+
+# Edit sshd_config
+- name: Disallow root logins over ssh
+  lineinfile: 
+    path: /etc/ssh/sshd_config 
+    regexp: 'PermitRootLogin'
+    line: 'PermitRootLogin no'
+
+- name: Disable SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '#PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+
+- name: Listen on only one internet protocol
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '#AddressFamily'
+    line: 'AddressFamily inet'
+ 
+# Install fail2ban
+- name: Install epel-release
+  yum:
+    name: "{{ item }}"
+  with_items:
+    - epel-release
+
+- name: Install fail2ban
+  yum:
+    name: "{{ item }}"
+  with_items:
+    - fail2ban
+
+- name: Start and enable fail2ban
+  service: 
+    name: fail2ban
+    state: started
+    enabled: yes
+
+- name: Override some basic fail2ban configurations
+  copy:
+    src: ../templates/jail.local.j2
+    dest: "{{ FAIL2BAN_LOCAL_FILE }}"
+    owner: "{{ FAIL2BAN_LOCAL_OWNER }}"
+    group: "{{ FAIL2BAN_LOCAL_OWNER }}"
+    mode: "{{ FAIL2BAN_LOCAL_MODE }}"
+
+# Install and configure iptables
+- name: Install iptables
+  yum: 
+    name: "{{ item }}"
+  with_items:
+    - iptables-services
+
+- name: Start and enable iptables
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - iptables
+    - ip6tables
+
+- name: Flush existing firewall rules
+  iptables:
+    flush: true
+
+- name: Copy iptables rules over server
+  copy:
+    src: ../templates/v4
+    dest: "{{ IPTABLES_RULES_FILES }}"
+    owner: "{{ FAIL2BAN_LOCAL_OWNER }}"
+    group: "{{ FAIL2BAN_LOCAL_OWNER }}"
+
+- name: Copy ip6tables rules over server
+  copy:
+    src: ../templates/v6
+    dest: "{{ IPTABLES_RULES_FILES }}"
+    owner: "{{ FAIL2BAN_LOCAL_OWNER }}"
+    group: "{{ FAIL2BAN_LOCAL_OWNER }}"
+
+- name: Import the rules
+  shell: "{{ item }}"
+  with_items:
+    - iptables-restore < /tmp/v4
+    - ip6tables-restore < /tmp/v6
+
+- name: Import the rules
+  command: "{{ item }}"
+  with_items:
+    - service iptables save
+    - service ip6tables save

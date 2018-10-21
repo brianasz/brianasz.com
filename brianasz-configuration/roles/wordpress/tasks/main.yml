@@ -1,0 +1,29 @@
+---
+# tasks file for wordpress
+
+- name: Creating directory structure
+  file:
+    path: /var/www
+    owner: "{{ WEB_DIR_OWNER }}"
+    group: "{{ WEB_DIR_GROUP }}"
+    state: directory
+    
+- name: Creating worpdress download directory
+  file:
+    path: "{{ WEB_DIR }}/src"
+    state: directory
+
+- name: Download Wordpress
+  get_url: 
+    url: "{{ WORDPRESS_URL }}"
+    dest: "{{ WEB_DIR }}/src"
+    #validate_certs: no
+
+- name: Extract WordPress  
+  unarchive: 
+    src: "{{ WEB_DIR }}/src/{{ WORDPRESS_VERSION }}.tar.gz"
+    dest: "{{ WEB_DIR }}/src"
+    copy: no 
+
+- name: Copy wordpress content to public_html directory
+  shell: "cp -R {{ WEB_DIR }}/src/wordpress/* {{ WEB_DIR }}/public_html"

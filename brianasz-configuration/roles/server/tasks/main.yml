@@ -42,7 +42,7 @@
 - name: Disallow root logins over ssh
   lineinfile: 
     path: /etc/ssh/sshd_config 
-    regexp: 'PermitRootLogin'
+    regexp: '#PermitRootLogin no'
     line: 'PermitRootLogin no'
 
 - name: Disable SSH password authentication
@@ -56,6 +56,11 @@
     path: /etc/ssh/sshd_config
     regexp: '#AddressFamily'
     line: 'AddressFamily inet'
+
+- name: Restart sshd service
+  service:
+    name: sshd
+    state: restarted
  
 # Install fail2ban
 - name: Install epel-release

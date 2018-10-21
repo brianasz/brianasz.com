@@ -1,0 +1,32 @@
+---
+# Tasks file for mysql
+- name: Install required software
+  yum:
+    name:
+      - "{{ item }}"
+    state: present
+  sudo: yes
+  with_items:
+    - mariadb-server
+    - MySQL-python
+
+- name: Start mysql server and enable it on reboot
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+# mysql_secure_installation is missing and should be placed before creating the DB.
+
+- name: Create mysql database
+  mysql_db:
+    name: "{{ WORDPRESS_DB }}"
+    state: present
+
+- name: Create mysql user
+  mysql_user:
+    name: "{{ WORDPRESS_DB_USER }}"
+    password: "{{ WORDPRESS_DB_PASS }}"
+    state: present
+    priv: "{{ WORDPRESS_DB }}.*:ALL"
+  notify: restart mariadb

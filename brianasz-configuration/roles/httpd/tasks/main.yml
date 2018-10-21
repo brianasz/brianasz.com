@@ -1,0 +1,81 @@
+---
+# tasks file for httpd
+
+- name: Install required software
+  yum:
+    name: 
+      - "{{ item }}"
+    state: present
+  with_items:
+    - httpd
+
+- name: Optimize your httpd installation and Update httpd.conf to add sites-enabled configuration files
+  blockinfile:
+    path: /etc/httpd/conf/httpd.conf
+    block: |
+      KeepAlive Off
+     
+      <IfModule mpm_prefork_module>
+      StartServers           4
+      MinSpareServers       20
+      MaxSpareServers       40
+      MaxClients           200
+      MaxRequestsPerChild 4500
+      </IfModule>
+ 
+      <IfModule mpm_worker_module>
+      StartServers          1
+      MinSpareThreads       5
+      MaxSpareThreads      15 
+      ThreadLimit          25
+      ThreadsPerChild       5
+      MaxClients           25
+      MaxRequestsPerChild 200
+      </IfModule>
+
+
+- name: Create virtual host conf file
+  file:
+    path: "{{ item }}"
+    owner: "{{ HTTP_USER }}"
+    group: "{{ HTTP_GROUP }}"
+    state: touch
+  with_items:
+    - "{{ VIRTUAL_HOST_CONF }}"
+
+- name: Create virtual host conf directories
+  file: 
+    path: "{{ item }}"
+    owner: "{{ HTTP_USER }}"
+    group: "{{ HTTP_GROUP }}"
+    state: directory
+  with_items:
+    - "{{ VIRTUAL_HOST_WEB }}/public_html"
+    - "{{ VIRTUAL_HOST_WEB }}/logs"
+
+- name: Creating the first virtual server
+  blockinfile:
+    path: "{{ VIRTUAL_HOST_CONF }}"
+    block: |
+      NameVirtualHost *:80
+
+      <VirtualHost *:80>
+      ServerAdmin {{ SERVER_ADMIN }}
+      ServerName {{ SERVER_NAME }}
+      ServerAlias {{ SERVER_ALIAS }}
+      DocumentRoot {{ VIRTUAL_HOST_WEB }}/public_html/
+      ErrorLog {{ VIRTUAL_HOST_WEB }}/logs/error.log
+      CustomLog {{ VIRTUAL_HOST_WEB }}/logs/access.log combined
+      </VirtualHost>
+
+- name: Configure SELinux to allow HTTP
+  command: "{{ item }}"
+  with_items:
+    - "cd {{ VIRTUAL_HOST_WEB }} ; find . -type f -exec sudo chmod 0644 {} ;"
+    - "cd {{ VIRTUAL_HOST_WEB }} ; find . -type d -exec sudo chmod 0755 {} ;"
+    - "chcon -t httpd_sys_content_t {{ VIRTUAL_HOST_WEB }} -R"
+    - "chcon -t httpd_sys_rw_content_t {{ VIRTUAL_HOST_WEB }} -R"
+
+- name: Restart httpd
+  command: echo "This task will restart httpd service"
+  notify: restart httpd

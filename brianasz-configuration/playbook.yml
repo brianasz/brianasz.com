@@ -3,8 +3,8 @@
   become_user: root
   become_method: sudo
   roles:
+    - server
     - httpd
     - mysql
-  #  - server
-  #  - php
-  #  - wordpress
+    - php
+    - wordpress

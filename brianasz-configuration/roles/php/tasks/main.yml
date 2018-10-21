@@ -1,0 +1,14 @@
+---
+# Tasks file for php
+- name: Install php extensions
+  yum:
+    name:
+      - "{{ item }}"
+    state: present
+  sudo: yes
+  with_items:
+    - php
+    - php-pear
+    - php-mysql
+
+# Edit /etc/php.ini for better error messages and logs and upgraded performance. https://www.linode.com/docs/web-servers/lamp/lamp-on-centos-7/ 
